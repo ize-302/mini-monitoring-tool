@@ -1,0 +1,16 @@
+{
+  "name": "api",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "dependencies": {
+    "@socket.io/bun-engine": "^0.1.0",
+    "socket.io": "^4.8.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

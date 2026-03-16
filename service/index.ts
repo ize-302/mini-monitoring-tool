@@ -10,7 +10,10 @@ function broadcast(data: { metric: string; value: number; ts: number }) {
   }
 }
 
-function insertToDb(type: "cpu" | "memory" | "temperature", value: number) {
+function insertDataIntoDB(
+  type: "cpu" | "memory" | "temperature",
+  value: number,
+) {
   const insertMetric = db.prepare(`
           INSERT INTO metrics (metric, value, ts)
           VALUES (?, ?, ?)
@@ -41,7 +44,7 @@ export default {
       POST: async (req: Request) => {
         const body = await req.json();
         const body_p = JSON.parse(JSON.stringify(body));
-        insertToDb("cpu", body_p[0]);
+        insertDataIntoDB("cpu", body_p[0]);
         broadcast({
           metric: "cpu",
           value: body_p[0],
@@ -54,7 +57,7 @@ export default {
       POST: async (req: Request) => {
         const body = await req.json();
         const body_p = JSON.parse(JSON.stringify(body));
-        insertToDb("memory", body_p[0]);
+        insertDataIntoDB("memory", body_p[0]);
         broadcast({
           metric: "memory",
           value: body_p[0],
@@ -67,7 +70,7 @@ export default {
       POST: async (req: Request) => {
         const body = await req.json();
         const body_p = JSON.parse(JSON.stringify(body));
-        insertToDb("temperature", body_p[0]);
+        insertDataIntoDB("temperature", body_p[0]);
         broadcast({
           metric: "temperature",
           value: body_p[0],
@@ -76,13 +79,6 @@ export default {
         return Response.json({ created: true, body });
       },
     },
-
-    "/canvasjs.min.js": new Response(
-      Bun.file(new URL("../web/canvasjs.min.js", import.meta.url).pathname),
-      {
-        headers: { "Content-Type": "application/javascript" },
-      },
-    ),
     "/api/*": Response.json({ message: "Not found" }, { status: 404 }),
   },
   fetch(req: Request, server: Bun.Server) {
@@ -101,7 +97,6 @@ export default {
     open(ws: Bun.ServerWebSocket<unknown>) {
       console.log("WebSocket connection opened");
       clients.add(ws as unknown as WebSocket);
-      ws.send(JSON.stringify({ type: "init" }));
     },
     message(_ws: Bun.ServerWebSocket<unknown>, _msg: string | Buffer) {},
     close(ws: Bun.ServerWebSocket<unknown>) {

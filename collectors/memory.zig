@@ -1,6 +1,12 @@
 const std = @import("std");
+const sendUsage = @import("./send_usage.zig").sendUsage;
+const Metric = @import("./send_usage.zig").Metric;
 
 pub fn main() !void {
+    var da = std.heap.DebugAllocator(.{}).init;
+    defer _ = da.deinit();
+    const allocator = da.allocator();
+
     while (true) {
         const path = "/proc/meminfo";
         var file = try std.fs.openFileAbsolute(path, .{});
@@ -19,46 +25,9 @@ pub fn main() !void {
 
         std.Thread.sleep(1000 * std.time.ns_per_ms);
 
-        try sendMemoryUsage(usage_percent);
+        const res = try sendUsage(allocator, Metric.memory, usage_percent);
+        defer allocator.free(res);
     }
-}
-
-fn sendMemoryUsage(cpu: u8) !void {
-    var da = std.heap.DebugAllocator(.{}).init;
-    defer _ = da.deinit();
-    const allocator = da.allocator();
-
-    var client: std.http.Client = .{
-        .allocator = allocator,
-    };
-    defer client.deinit();
-
-    var result_body = std.Io.Writer.Allocating.init(allocator);
-    defer result_body.deinit();
-
-    const uri = try std.Uri.parse("http://localhost:2697/api/metrics/memory");
-    var req = try client.request(.POST, uri, .{ .extra_headers = &.{.{ .name = "Content-Type", .value = "application/json" }} });
-    defer req.deinit();
-
-    var list = try std.ArrayList(u8).initCapacity(allocator, 0);
-    defer list.deinit(allocator);
-
-    const numAsString = try std.fmt.allocPrint(allocator, "{}", .{cpu});
-    defer allocator.free(numAsString);
-    try list.append(allocator, '[');
-    try list.appendSlice(allocator, numAsString);
-    try list.append(allocator, ']');
-
-    try req.sendBodyComplete(list.items);
-    var buf: [1024]u8 = undefined;
-    var response = try req.receiveHead(&buf);
-
-    if (response.head.status != .ok) {
-        return;
-    }
-
-    const body = try response.reader(&.{}).allocRemaining(allocator, .unlimited);
-    defer allocator.free(body);
 }
 
 fn readMemInfoValue(content: []const u8, key: []const u8) ?u64 {

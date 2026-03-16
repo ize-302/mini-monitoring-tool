@@ -1,0 +1,91 @@
+import * as CanvasJS from "./canvasjs.min.js";
+
+type TDataPoint = { x: Date; y: number };
+
+// cpu
+var cpu_dataPoints: TDataPoint[] = [];
+var cpu_data = [
+  {
+    type: "area",
+    dataPoints: cpu_dataPoints,
+    theme: "light2",
+  },
+];
+var cpuChart = new CanvasJS.Chart("cpuChartContainer", {
+  title: { text: "CPU Usage" },
+  data: cpu_data,
+});
+
+// memory
+var memory_dataPoints: TDataPoint[] = [];
+var memoroy_data = [
+  {
+    type: "stepArea",
+    dataPoints: memory_dataPoints,
+  },
+];
+var memoryChart = new CanvasJS.Chart("memoryChartContainer", {
+  title: { text: "Memory Usage" },
+  data: memoroy_data,
+});
+
+// temperature
+var temperature_dataPoints: TDataPoint[] = [];
+var temperature_data = [
+  {
+    type: "column",
+    color: "#6D78AD",
+    dataPoints: temperature_dataPoints,
+  },
+];
+var temperatureChart = new CanvasJS.Chart("temperatureChartContainer", {
+  title: { text: "Temperature" },
+  data: temperature_data,
+});
+
+(async function () {
+  await connectToServer();
+
+  async function connectToServer() {
+    const ws = new WebSocket("ws://localhost:2697/ws");
+
+    ws.onmessage = (websocketMessage) => {
+      const messageBody = JSON.parse(websocketMessage.data);
+      if (messageBody.metric === "cpu") {
+        cpu_dataPoints.push({
+          x: new Date(messageBody.ts),
+          y: messageBody.value,
+        });
+        if (cpu_dataPoints.length > 20) cpu_dataPoints.shift();
+      }
+      cpuChart.render();
+
+      if (messageBody.metric === "memory") {
+        memory_dataPoints.push({
+          x: new Date(messageBody.ts),
+          y: messageBody.value,
+        });
+        if (memory_dataPoints.length > 20) memory_dataPoints.shift();
+      }
+      memoryChart.render();
+
+      if (messageBody.metric === "temperature") {
+        temperature_dataPoints.push({
+          x: new Date(messageBody.ts),
+          y: messageBody.value,
+        });
+        if (temperature_dataPoints.length > 40) temperature_dataPoints.shift();
+      }
+      temperatureChart.render();
+    };
+
+    return new Promise(function (resolve, reject) {
+      if (ws.readyState === 1) {
+        resolve(ws);
+      }
+      if (ws.readyState === 3) {
+        reject(ws);
+      }
+    });
+  }
+})();

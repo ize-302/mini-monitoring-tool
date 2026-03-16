@@ -1,8 +1,10 @@
 #!/bin/bash
 
-bun --hot ./service/index.ts &
-
+(cd service && bun --hot index.ts) &
 API_PID=$!
+
+# when this script exits for any reason, run kill $API_PID to avoid orphan processes
+trap "kill $API_PID" EXIT
 
 echo "Waiting for API..."
 
@@ -10,14 +12,14 @@ until curl -s http://localhost:2697 >/dev/null; do
 	sleep 1
 done
 
-echo "API ready. Starting Zig program..."
+echo "API ready. Starting collectors..."
 
-exec zig run ./collector/cpu.zig &
-
-sleep 1
-
-exec zig run ./collector/memory.zig &
+exec zig run ./collectors/cpu.zig &
 
 sleep 1
 
-exec zig run ./collector/temperature.zig
+exec zig run ./collectors/memory.zig &
+
+sleep 1
+
+exec zig run ./collectors/temperature.zig

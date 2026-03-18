@@ -11,7 +11,7 @@ function broadcast(data: { metric: string; value: number; ts: number }) {
 }
 
 function insertDataIntoDB(
-  type: "cpu" | "memory" | "temperature",
+  type: "cpu" | "memory" | "temperature" | "battery",
   value: number,
 ) {
   const insertMetric = db.prepare(`
@@ -73,6 +73,19 @@ export default {
         insertDataIntoDB("temperature", body_p[0]);
         broadcast({
           metric: "temperature",
+          value: body_p[0],
+          ts: Date.now(),
+        });
+        return Response.json({ created: true, body });
+      },
+    },
+    "/api/metrics/battery": {
+      POST: async (req: Request) => {
+        const body = await req.json();
+        const body_p = JSON.parse(JSON.stringify(body));
+        insertDataIntoDB("battery", body_p[0]);
+        broadcast({
+          metric: "battery",
           value: body_p[0],
           ts: Date.now(),
         });

@@ -1,6 +1,7 @@
 const std = @import("std");
 const sendUsage = @import("./send_usage.zig").sendUsage;
 const Metric = @import("./send_usage.zig").Metric;
+const parse = std.fmt.parseInt;
 
 const CpuTimes = struct {
     user: u64,
@@ -25,26 +26,19 @@ const CpuTimes = struct {
     }
 };
 
-pub fn main() !void {
-    var da = std.heap.DebugAllocator(.{}).init;
-    defer _ = da.deinit();
-    const allocator = da.allocator();
+pub fn cpuCollector(allocator: std.mem.Allocator) !void {
+    const cpu1 = try readCpuTimes();
+    std.Thread.sleep(1000 * std.time.ns_per_ms);
+    const cpu2 = try readCpuTimes();
 
-    while (true) {
-        const cpu1 = try readCpuTimes();
-        std.Thread.sleep(1000 * std.time.ns_per_ms);
+    const delta_total = cpu2.total() - cpu1.total();
+    const delta_active = cpu2.active() - cpu1.active();
 
-        const cpu2 = try readCpuTimes();
+    const usage_percent_f64 = @as(f64, @floatFromInt(delta_active)) / @as(f64, @floatFromInt(delta_total)) * 100.0;
+    const usage_percent = @as(u8, @intFromFloat(usage_percent_f64));
 
-        const delta_total = cpu2.total() - cpu1.total();
-        const delta_active = cpu2.active() - cpu1.active();
-
-        const usage_percent_f64 = @as(f64, @floatFromInt(delta_active)) / @as(f64, @floatFromInt(delta_total)) * 100.0;
-        const usage_percent = @as(u8, @intFromFloat(usage_percent_f64));
-
-        const res = try sendUsage(allocator, Metric.cpu, usage_percent);
-        defer allocator.free(res);
-    }
+    const res = try sendUsage(allocator, Metric.cpu, usage_percent);
+    defer allocator.free(res);
 }
 
 fn readCpuTimes() !CpuTimes {
@@ -65,7 +59,6 @@ fn readCpuTimes() !CpuTimes {
     }
 
     var it = std.mem.tokenizeAny(u8, cpu_line[4..], " ");
-    const parse = std.fmt.parseInt;
 
     return CpuTimes{
         .user = try parse(u64, it.next() orelse return error.Parse, 10),

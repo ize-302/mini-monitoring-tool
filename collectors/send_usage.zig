@@ -1,6 +1,6 @@
 const std = @import("std");
 
-pub const Metric = enum { cpu, memory, temperature };
+pub const Metric = enum { cpu, memory, temperature, battery };
 
 pub fn sendUsage(allocator: std.mem.Allocator, metric: Metric, metric_value: u8) ![]u8 {
     var client: std.http.Client = .{
@@ -15,6 +15,7 @@ pub fn sendUsage(allocator: std.mem.Allocator, metric: Metric, metric_value: u8)
         .cpu => "cpu",
         .memory => "memory",
         .temperature => "temperature",
+        .battery => "battery",
     };
 
     const url = try std.fmt.allocPrint(allocator, "{s}/{s}", .{ "http://localhost:2697/api/metrics", metric_type });

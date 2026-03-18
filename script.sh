@@ -14,12 +14,4 @@ done
 
 echo "API ready. Starting collectors..."
 
-exec zig run ./collectors/cpu.zig &
-
-sleep 1
-
-exec zig run ./collectors/memory.zig &
-
-sleep 1
-
-exec zig run ./collectors/temperature.zig
+exec zig run ./collectors/main.zig

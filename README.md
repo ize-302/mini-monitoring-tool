@@ -2,6 +2,8 @@
 
 Personal monitoring tool for my linux setup. Think of a simplified version of Grafana + Prometheus but fully local.
 
+![system architecture for local monitoring tool](./screenshot.png)
+
 ## System architecture
 
 ```
@@ -30,12 +32,12 @@ Web dashboard (web/index.html) at /web
 
 ## Stack
 
-| Layer | Tech | Role |
-|-------|------|------|
-| Collector | Zig | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 250ms |
-| API | Bun + TypeScript | HTTP + WebSocket server, persists metrics to SQLite |
-| Storage | SQLite (WAL mode) | Time-series storage, auto-purges data older than 1 day |
-| Dashboard | HTML + CanvasJS | Real-time charts over WebSocket |
+| Layer     | Tech              | Role                                                                  |
+| --------- | ----------------- | --------------------------------------------------------------------- |
+| Collector | Zig               | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 250ms |
+| API       | Bun + TypeScript  | HTTP + WebSocket server, persists metrics to SQLite                   |
+| Storage   | SQLite (WAL mode) | Time-series storage, auto-purges data older than 1 day                |
+| Dashboard | HTML + CanvasJS   | Real-time charts over WebSocket                                       |
 
 ## Metrics collected
 
@@ -46,15 +48,15 @@ Web dashboard (web/index.html) at /web
 
 ## API
 
-| Method | Route | Description |
-|--------|-------|-------------|
-| `POST` | `/api/metrics/cpu` | Ingest CPU usage |
-| `POST` | `/api/metrics/memory` | Ingest memory usage |
-| `POST` | `/api/metrics/temperature` | Ingest temperature |
-| `POST` | `/api/metrics/battery` | Ingest battery level |
-| `GET` | `/api/history?metric=<name>` | Last 200 data points for a metric |
-| `WS` | `/ws` | Real-time broadcast of all incoming metrics |
-| `GET` | `/web` | Web dashboard |
+| Method | Route                        | Description                                 |
+| ------ | ---------------------------- | ------------------------------------------- |
+| `POST` | `/api/metrics/cpu`           | Ingest CPU usage                            |
+| `POST` | `/api/metrics/memory`        | Ingest memory usage                         |
+| `POST` | `/api/metrics/temperature`   | Ingest temperature                          |
+| `POST` | `/api/metrics/battery`       | Ingest battery level                        |
+| `GET`  | `/api/history?metric=<name>` | Last 200 data points for a metric           |
+| `WS`   | `/ws`                        | Real-time broadcast of all incoming metrics |
+| `GET`  | `/web`                       | Web dashboard                               |
 
 ## How to run
 

@@ -49,7 +49,6 @@ var temperatureChart = new CanvasJS.Chart("temperatureChartContainer", {
   ],
   axisY: {
     minimum: 0,
-    maximum: 100,
   },
 });
 

@@ -14,8 +14,8 @@ pub fn temperatureCollector(allocator: std.mem.Allocator) !void {
 
     const trimmed_to_int = try std.fmt.parseInt(u64, trimmed, 10);
     const result: u64 = trimmed_to_int / 1000;
-    const temp_percentage: u8 = @intCast(result);
+    const temp: u8 = @intCast(result);
 
-    const res = try sendUsage(allocator, Metric.temperature, temp_percentage);
+    const res = try sendUsage(allocator, Metric.temperature, temp);
     defer allocator.free(res);
 }

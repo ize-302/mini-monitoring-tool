@@ -8,13 +8,13 @@ Personal monitoring tool for my linux setup. Think of a simplified version of Gr
 
 ```
 Metric collectors (Zig)
-  main.zig        → ticker loop (250ms aligned)
+  main.zig        → ticker loop (1s aligned)
   cpu.zig         → reads /proc/stat           → POST /api/metrics/cpu
   memory.zig      → reads /proc/meminfo        → POST /api/metrics/memory
   temperature.zig → reads /sys/class/thermal   → POST /api/metrics/temperature
   battery.zig     → reads /sys/class/power_supply/BAT0/capacity → POST /api/metrics/battery
         │
-        │ POST JSON every 250ms
+        │ POST JSON every 1s
         ▼
 Bun HTTP server (service/index.ts) :2697
         │
@@ -32,16 +32,16 @@ Web dashboard (web/index.html) at /web
 
 ## Stack
 
-| Layer     | Tech              | Role                                                                  |
-| --------- | ----------------- | --------------------------------------------------------------------- |
-| Collector | Zig               | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 250ms |
-| API       | Bun + TypeScript  | HTTP + WebSocket server, persists metrics to SQLite                   |
-| Storage   | SQLite (WAL mode) | Time-series storage, auto-purges data older than 1 day                |
-| Dashboard | HTML + CanvasJS   | Real-time charts over WebSocket                                       |
+| Layer     | Tech              | Role                                                               |
+| --------- | ----------------- | ------------------------------------------------------------------ |
+| Collector | Zig               | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 1s |
+| API       | Bun + TypeScript  | HTTP + WebSocket server, persists metrics to SQLite                |
+| Storage   | SQLite (WAL mode) | Time-series storage, auto-purges data older than 1 day             |
+| Dashboard | HTML + CanvasJS   | Real-time charts over WebSocket                                    |
 
 ## Metrics collected
 
-- **CPU usage** — percentage calculated from `/proc/stat` (two-sample delta)
+- **CPU usage** — percentage calculated from `/proc/stat` (stateful delta across ticks, sampled once per 1s tick)
 - **Memory usage** — percentage from `MemTotal` / `MemAvailable` in `/proc/meminfo`
 - **Temperature** — CPU thermal zone in °C from `/sys/class/thermal/thermal_zone0/temp`
 - **Battery** — charge percentage from `/sys/class/power_supply/BAT0/capacity`
@@ -72,6 +72,6 @@ cd service && bun install
 bash ./script.sh
 ```
 
-This starts the Bun API server, then waits for it to be ready before launching the Zig collector process (which runs all four collectors on a 250ms tick via `main.zig`).
+This starts the Bun API server, then waits for it to be ready before launching the Zig collector process (which runs all four collectors on a 1s tick via `main.zig`).
 
 3. Open the dashboard at `http://localhost:2697/web`

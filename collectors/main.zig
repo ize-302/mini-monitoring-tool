@@ -12,7 +12,7 @@ pub fn main() !void {
 
     while (true) {
         const now_ms: u64 = @intCast(std.time.milliTimestamp());
-        const next_tick_ms = (now_ms / 250 + 1) * 250;
+        const next_tick_ms = (now_ms / 1000 + 1) * 1000;
         std.Thread.sleep((next_tick_ms - now_ms) * std.time.ns_per_ms);
 
         try cpuCollector.cpuCollector(allocator);

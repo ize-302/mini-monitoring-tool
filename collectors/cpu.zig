@@ -26,13 +26,16 @@ const CpuTimes = struct {
     }
 };
 
-pub fn cpuCollector(allocator: std.mem.Allocator) !void {
-    const cpu1 = try readCpuTimes();
-    std.Thread.sleep(1000 * std.time.ns_per_ms);
-    const cpu2 = try readCpuTimes();
+var prev: ?CpuTimes = null;
 
-    const delta_total = cpu2.total() - cpu1.total();
-    const delta_active = cpu2.active() - cpu1.active();
+pub fn cpuCollector(allocator: std.mem.Allocator) !void {
+    const curr = try readCpuTimes();
+    defer prev = curr;
+
+    const p = prev orelse return;
+
+    const delta_total = curr.total() - p.total();
+    const delta_active = curr.active() - p.active();
 
     const usage_percent_f64 = @as(f64, @floatFromInt(delta_active)) / @as(f64, @floatFromInt(delta_total)) * 100.0;
     const usage_percent = @as(u8, @intFromFloat(usage_percent_f64));

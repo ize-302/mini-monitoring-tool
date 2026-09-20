@@ -1,5 +1,22 @@
-import web from "../web/index.html";
+import { join, resolve, sep } from "node:path";
 import { db } from "./db";
+
+const WEB_DIR = resolve(import.meta.dir, "../web/dist");
+
+// Serve the built Vite app; unknown paths fall back to index.html.
+async function serveWeb(req: Request) {
+  const rel = new URL(req.url).pathname.replace(/^\/web\/?/, "");
+  const path = resolve(join(WEB_DIR, rel || "index.html"));
+  if (path.startsWith(WEB_DIR + sep)) {
+    const file = Bun.file(path);
+    if (await file.exists()) return new Response(file);
+  }
+  const index = Bun.file(join(WEB_DIR, "index.html"));
+  if (await index.exists()) return new Response(index);
+  return new Response("Web build missing. Run: cd web && bun run build", {
+    status: 503,
+  });
+}
 
 const clients = new Set<WebSocket>();
 
@@ -24,7 +41,8 @@ function insertDataIntoDB(
 export default {
   port: 2697,
   routes: {
-    "/web": web,
+    "/web": serveWeb,
+    "/web/*": serveWeb,
     "/api/history": {
       GET: async (req: Request) => {
         const url = new URL(req.url);

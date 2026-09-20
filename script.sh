@@ -1,5 +1,7 @@
 #!/bin/bash
 
+(cd web && bun install --silent && bun run build) || exit 1
+
 (cd service && bun --hot index.ts) &
 API_PID=$!
 

@@ -2,14 +2,17 @@ const std = @import("std");
 const sendUsage = @import("./send_usage.zig").sendUsage;
 const Metric = @import("./send_usage.zig").Metric;
 
-pub fn memoryCollector(allocator: std.mem.Allocator) !void {
+pub fn memoryCollector(init: std.process.Init, allocator: std.mem.Allocator) !void {
     const path = "/proc/meminfo";
-    var file = try std.fs.openFileAbsolute(path, .{});
-    defer file.close();
+    var file = try std.Io.Dir.openFileAbsolute(init.io, path, .{});
+    defer file.close(init.io);
 
-    var buffer: [2048]u8 = undefined;
-    const bytes_read = try file.readAll(&buffer);
-    const content = buffer[0..bytes_read];
+    var buffer: [256]u8 = undefined;
+    var bytes_read = std.Io.File.reader(file, init.io, &buffer);
+
+    var content_buffer: [2048]u8 = undefined;
+    const bytes_read_size = try bytes_read.interface.readSliceShort(&content_buffer);
+    const content = content_buffer[0..bytes_read_size];
 
     const total = readMemInfoValue(content, "MemTotal:") orelse return error.MissingMemTotal;
     const available = readMemInfoValue(content, "MemAvailable:") orelse return error.MissingMemAvailable;
@@ -18,7 +21,7 @@ pub fn memoryCollector(allocator: std.mem.Allocator) !void {
     const usage_percent_f64 = @as(f64, @floatFromInt(used)) / @as(f64, @floatFromInt(total)) * 100.0;
     const usage_percent = @as(u8, @intFromFloat(usage_percent_f64));
 
-    const res = try sendUsage(allocator, Metric.memory, usage_percent);
+    const res = try sendUsage(init, allocator, Metric.memory, usage_percent);
     defer allocator.free(res);
 }
 

@@ -34,7 +34,7 @@ Web dashboard (web/index.html) at /web
 
 | Layer     | Tech              | Role                                                               |
 | --------- | ----------------- | ------------------------------------------------------------------ |
-| Collector | Zig               | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 1s |
+| Collector | Zig 0.16.0        | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 1s |
 | API       | Bun + TypeScript  | HTTP + WebSocket server, persists metrics to SQLite                |
 | Storage   | SQLite (WAL mode) | Time-series storage, auto-purges data older than 1 day             |
 | Dashboard | HTML + CanvasJS   | Real-time charts over WebSocket                                    |
@@ -57,6 +57,11 @@ Web dashboard (web/index.html) at /web
 | `GET`  | `/api/history?metric=<name>` | Last 200 data points for a metric           |
 | `WS`   | `/ws`                        | Real-time broadcast of all incoming metrics |
 | `GET`  | `/web`                       | Web dashboard                               |
+
+## Requirements
+
+- [Zig](https://ziglang.org/download/) **0.16.0** (collectors are written against this version; other versions may fail to build)
+- [Bun](https://bun.sh)
 
 ## How to run
 

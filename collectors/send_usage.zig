@@ -2,8 +2,9 @@ const std = @import("std");
 
 pub const Metric = enum { cpu, memory, temperature, battery };
 
-pub fn sendUsage(allocator: std.mem.Allocator, metric: Metric, metric_value: u8) ![]u8 {
+pub fn sendUsage(init: std.process.Init, allocator: std.mem.Allocator, metric: Metric, metric_value: u8) ![]u8 {
     var client: std.http.Client = .{
+        .io = init.io,
         .allocator = allocator,
     };
     defer client.deinit();

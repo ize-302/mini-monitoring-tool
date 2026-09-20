@@ -23,7 +23,7 @@ Bun HTTP server (service/index.ts) :2697
         └── broadcast via WebSocket (/ws)
         │
         ▼
-Web dashboard (web/index.html) at /web
+Web dashboard (web/, Vite + React) at /web
   - CPU area chart
   - Memory spline-area chart
   - Temperature spline-area chart
@@ -37,7 +37,7 @@ Web dashboard (web/index.html) at /web
 | Collector | Zig               | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 1s |
 | API       | Bun + TypeScript  | HTTP + WebSocket server, persists metrics to SQLite                |
 | Storage   | SQLite (WAL mode) | Time-series storage, auto-purges data older than 1 day             |
-| Dashboard | HTML + CanvasJS   | Real-time charts over WebSocket                                    |
+| Dashboard | Vite + React + Blueprint + Tailwind v4 + Tremor Raw charts | Real-time charts over WebSocket             |
 
 ## Metrics collected
 
@@ -72,6 +72,16 @@ cd service && bun install
 bash ./script.sh
 ```
 
-This starts the Bun API server, then waits for it to be ready before launching the Zig collector process (which runs all four collectors on a 1s tick via `main.zig`).
+This builds the dashboard (`web/`), starts the Bun API server, then waits for it to be ready before launching the Zig collector process (which runs all four collectors on a 1s tick via `main.zig`).
 
 3. Open the dashboard at `http://localhost:2697/web`
+
+### Frontend development
+
+With the API running, start the Vite dev server for hot reload. It proxies `/api` and `/ws` to `:2697`:
+
+```sh
+cd web && bun install && bun run dev
+```
+
+Open `http://localhost:5173/web/`. The Bun server serves the production build from `web/dist` (`bun run build`).

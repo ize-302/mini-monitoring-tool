@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Blueprint owns the theme: Tremor's `dark:` variant follows Blueprint's dark class. */
+@custom-variant dark (&:where(.bp6-dark, .bp6-dark *));
+
+body {
+  @apply antialiased bg-gray-50 text-gray-900 dark:bg-gray-950 dark:text-gray-50;
+}

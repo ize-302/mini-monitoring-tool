@@ -67,6 +67,7 @@ export function useMetrics() {
       };
     };
 
+    loadHistory();
     connect();
     return () => {
       disposed = true;

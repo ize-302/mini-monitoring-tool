@@ -1,4 +1,16 @@
+/* Blueprint sits above Tailwind's preflight but below its utilities, so classes like `m-0` win. */
+@layer theme, base, blueprint, components, utilities;
+
 @import "tailwindcss";
+@import "@blueprintjs/core/lib/css/blueprint.css" layer(blueprint);
+@import "@blueprintjs/icons/lib/css/blueprint-icons.css" layer(blueprint);
+
+/* Blueprint gives every <p> a bottom margin, which misaligns Tremor's legend dots and tooltips. */
+@layer components {
+  [tremor-id="tremor-raw"] p {
+    margin: 0;
+  }
+}
 
 /* Blueprint owns the theme: Tremor's `dark:` variant follows Blueprint's dark class. */
 @custom-variant dark (&:where(.bp6-dark, .bp6-dark *));

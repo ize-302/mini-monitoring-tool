@@ -28,8 +28,8 @@ const CpuTimes = struct {
 
 var prev: ?CpuTimes = null;
 
-pub fn cpuCollector(allocator: std.mem.Allocator) !void {
-    const curr = try readCpuTimes();
+pub fn cpuCollector(init: std.process.Init, allocator: std.mem.Allocator) !void {
+    const curr = try readCpuTimes(init);
     defer prev = curr;
 
     const p = prev orelse return;
@@ -40,18 +40,21 @@ pub fn cpuCollector(allocator: std.mem.Allocator) !void {
     const usage_percent_f64 = @as(f64, @floatFromInt(delta_active)) / @as(f64, @floatFromInt(delta_total)) * 100.0;
     const usage_percent = @as(u8, @intFromFloat(usage_percent_f64));
 
-    const res = try sendUsage(allocator, Metric.cpu, usage_percent);
+    const res = try sendUsage(init, allocator, Metric.cpu, usage_percent);
     defer allocator.free(res);
 }
 
-fn readCpuTimes() !CpuTimes {
+fn readCpuTimes(init: std.process.Init) !CpuTimes {
     const path = "/proc/stat";
-    var file = try std.fs.openFileAbsolute(path, .{});
-    defer file.close();
+    var file = try std.Io.Dir.openFileAbsolute(init.io, path, .{});
+    defer file.close(init.io);
 
     var buffer: [256]u8 = undefined;
-    const bytes_read = try file.readAll(&buffer);
-    const content = buffer[0..bytes_read];
+    var bytes_read = std.Io.File.reader(file, init.io, &buffer);
+
+    var content_buffer: [2048]u8 = undefined;
+    const bytes_read_size = try bytes_read.interface.readSliceShort(&content_buffer);
+    const content = content_buffer[0..bytes_read_size];
 
     var lines = std.mem.splitAny(u8, content, "\n");
 

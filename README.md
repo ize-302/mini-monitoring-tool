@@ -47,6 +47,8 @@ Web dashboard (web/, Vite + React) at /web
 - **Temperature** — CPU thermal zone in °C from `/sys/class/thermal/thermal_zone0/temp`
 - **Battery** — charge percentage from `/sys/class/power_supply/BAT0/capacity`
 
+If a metric's source file is missing or unreadable (for example, no battery on a desktop or server), the collector logs a warning once and skips that metric. Its card shows "no data".
+
 ## Dashboard
 
 - **Cards** — one per metric with an icon tinted to match its chart. The four cards split the viewport height on wide screens and stack on narrow ones.

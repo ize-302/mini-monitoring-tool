@@ -2,7 +2,7 @@
 
 (cd web && bun install --silent && bun run build) || exit 1
 
-(cd service && bun --hot index.ts) &
+(cd service && go run cmd/main.go) &
 API_PID=$!
 
 # when this script exits for any reason, run kill $API_PID to avoid orphan processes

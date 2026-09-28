@@ -1,0 +1,9 @@
+{
+  "private": true,
+  "scripts": {
+    "dev": "concurrently -k -n api,web,collect -c blue,magenta,green \"cd service && go tool air\" \"cd web && bun run dev\" \"cd collectors && air\""
+  },
+  "devDependencies": {
+    "concurrently": "^9"
+  }
+}

@@ -3,3 +3,7 @@ metrics.db
 metrics.db-shm
 metrics.db-wal
 dist
+tmp
+.zig-cache
+zig-out
+build-errors.log

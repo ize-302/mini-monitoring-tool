@@ -39,6 +39,7 @@ export function levelOf(points: Point[], t: Threshold): Level {
   if (!latest) return "ok";
   const from = latest.ts - (t.sustainSec ?? 0) * 1000;
   const window = points.filter((p) => p.ts >= from).map((p) => p.value);
+  if (!window.length) return "ok";
   if (t.lowIsBad) {
     const best = Math.max(...window);
     return best < t.danger ? "danger" : best < t.warn ? "warn" : "ok";

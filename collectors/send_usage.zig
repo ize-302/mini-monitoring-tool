@@ -30,15 +30,13 @@ pub fn sendUsage(init: std.process.Init, allocator: std.mem.Allocator, metric: M
 
     const numAsString = try std.fmt.allocPrint(allocator, "{}", .{metric_value});
     defer allocator.free(numAsString);
-    try list.append(allocator, '[');
     try list.appendSlice(allocator, numAsString);
-    try list.append(allocator, ']');
 
     try req.sendBodyComplete(list.items);
     var buf: [1024]u8 = undefined;
     const response = try req.receiveHead(&buf);
 
-    if (response.head.status != .ok) {
+    if (response.head.status != .created) {
         return error.BadStatus;
     }
 

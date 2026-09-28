@@ -1,0 +1,12 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+  cmd = "zig build-exe main.zig -femit-bin=tmp/collectors"
+  entrypoint = ["./tmp/collectors"]
+  include_ext = ["zig"]
+  exclude_dir = ["tmp", ".zig-cache", "zig-out"]
+  delay = 500
+  rerun = true
+  rerun_delay = 2000
+  send_interrupt = true

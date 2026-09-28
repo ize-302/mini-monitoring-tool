@@ -14,9 +14,9 @@ Metric collectors (Zig)
   temperature.zig → reads /sys/class/thermal   → POST /api/metrics/temperature
   battery.zig     → reads /sys/class/power_supply/BAT0/capacity → POST /api/metrics/battery
         │
-        │ POST JSON every 1s
+        │ POST integer body every 1s
         ▼
-Bun HTTP server (service/index.ts) :2697
+Go HTTP server (service/cmd/main.go) :2697
         │
         ├── INSERT INTO SQLite (metrics.db)
         │
@@ -33,11 +33,11 @@ Web dashboard (web/, Vite + React) at /web
 
 ## Stack
 
-| Layer     | Tech                                                 | Role                                                               |
-| --------- | ---------------------------------------------------- | ------------------------------------------------------------------ |
-| Collector | Zig 0.16.0                                           | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 1s |
-| API       | Bun + TypeScript                                     | HTTP + WebSocket server, persists metrics to SQLite                |
-| Storage   | SQLite (WAL mode)                                    | Time-series storage, auto-purges data older than 1 day             |
+| Layer     | Tech                                                  | Role                                                               |
+| --------- | ----------------------------------------------------- | ------------------------------------------------------------------ |
+| Collector | Zig 0.16.0                                            | Reads Linux `/proc` and `/sys` pseudofiles, POSTs metrics every 1s |
+| API       | Go (gorilla/mux, gorilla/websocket, go-sqlite3)       | HTTP + WebSocket server, persists metrics to SQLite                |
+| Storage   | SQLite (WAL mode)                                     | Time-series storage, auto-purges data older than 1 day             |
 | Dashboard | Vite + React 19, Blueprint 6, Tailwind v4, Tremor Raw | Real-time cards and charts over WebSocket, light/dark theme        |
 
 ## Metrics collected
@@ -58,11 +58,11 @@ Web dashboard (web/, Vite + React) at /web
 
 Each card shows the latest value, min / avg / p95 / max over the 120-reading window, and a trend arrow versus the previous minute's average. Alert thresholds (temperature has none; it idles hot on this machine) live in `web/src/lib/metrics.ts`:
 
-| Metric      | Warning | Critical | Notes                            |
-| ----------- | ------- | -------- | -------------------------------- |
-| CPU         | ≥ 70%   | ≥ 90%    | must hold for 30s                |
-| Memory      | ≥ 80%   | ≥ 90%    |                                  |
-| Battery     | < 30%   | < 15%    | lower is worse                   |
+| Metric  | Warning | Critical | Notes             |
+| ------- | ------- | -------- | ----------------- |
+| CPU     | ≥ 70%   | ≥ 90%    | must hold for 30s |
+| Memory  | ≥ 80%   | ≥ 90%    |                   |
+| Battery | < 30%   | < 15%    | lower is worse    |
 
 Critical metrics also raise a banner at the top. A card with no reading for 5s is marked stale and dimmed, so a dead collector doesn't look like a flat line.
 
@@ -81,35 +81,50 @@ Critical metrics also raise a banner at the top. A card with no reading for 5s i
 ## Requirements
 
 - [Zig](https://ziglang.org/download/) **0.16.0** (collectors are written against this version; other versions may fail to build)
+- [Go](https://go.dev/dl/) **1.27+** (API server in `service/`)
 - [Bun](https://bun.sh)
+- [air](https://github.com/air-verse/air) on your `PATH`, for development mode only (`go install github.com/air-verse/air@latest`)
 
 ## How to run
 
-1. Install service dependencies:
+Install dependencies once, from the project root:
 
 ```sh
-cd service && bun install
+bun install              # root dev tooling (concurrently)
+cd web && bun install    # dashboard
 ```
 
-2. Start everything from the project root:
+### Development (hot reload)
+
+Start everything from the project root:
+
+```sh
+bun run dev
+```
+
+This runs all three parts together, with each log line prefixed `[api]`, `[web]` or `[collect]`. Ctrl+C stops all of them.
+
+| Part         | Runs with                                   | Reloads when                  |
+| ------------ | ------------------------------------------- | ----------------------------- |
+| `service`    | `go tool air` (`service/.air.toml`)         | a `.go` or `.sql` file changes |
+| `web`        | Vite dev server                             | any source file changes (HMR) |
+| `collectors` | `air` as a watcher (`collectors/.air.toml`) | a `.zig` file changes         |
+
+Open the dashboard at `http://localhost:5173/web/`. Vite proxies `/api` and `/ws` to the API on `:2697`.
+
+The collector exits when the API is unreachable, for example at startup or while air restarts the Go server. air reruns it after 2s, so a few connection errors in the `[collect]` log are expected.
+
+### Production-style run
 
 ```sh
 bash ./script.sh
 ```
 
-This builds the dashboard (`web/`), starts the Bun API server, then waits for it to be ready before launching the Zig collector process (which runs all four collectors on a 1s tick via `main.zig`).
+This builds the dashboard into `web/dist` (the build also typechecks), starts the Go API server, then waits for it to be ready before launching the Zig collector process (which runs all four collectors on a 1s tick via `main.zig`). Nothing reloads on change.
 
-3. Open the dashboard at `http://localhost:2697/web`
+Open the dashboard at `http://localhost:2697/web`.
 
-### Frontend development
-
-With the API running, start the Vite dev server for hot reload. It proxies `/api` and `/ws` to `:2697`:
-
-```sh
-cd web && bun install && bun run dev
-```
-
-Open `http://localhost:5173/web/`. The Bun server serves the production build from `web/dist` (`bun run build`, which also typechecks).
+If either command fails with `bind: address already in use`, another API server is still running on `:2697`. Stop it first.
 
 ### Frontend layout
 
